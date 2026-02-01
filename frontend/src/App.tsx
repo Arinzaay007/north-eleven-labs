@@ -261,14 +261,6 @@ function App() {
                   )}
                 </div>
               </div>
-              <button
-                onClick={handleUploadClick}
-                disabled={uploading}
-                className="flex items-center justify-center gap-2 bg-background-elevated rounded-md px-5 py-3 hover:bg-background-secondary transition-colors disabled:opacity-50 w-full md:w-auto"
-              >
-                <Upload className="w-4 h-4 text-text-muted" />
-                <span className="text-text-tertiary text-base">選擇檔案</span>
-              </button>
 
               {/* 參考音訊播放器 */}
               {refAudioUrl && (
