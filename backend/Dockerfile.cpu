@@ -1,0 +1,70 @@
+# Backend Dockerfile for CPU-only deployment
+FROM python:3.12-slim
+
+# 設置工作目錄
+WORKDIR /app
+
+# 安裝系統依賴（完整的音頻庫支持）
+RUN apt-get update && apt-get install -y \
+    git \
+    wget \
+    curl \
+    build-essential \
+    libsndfile1 \
+    libsndfile1-dev \
+    ffmpeg \
+    sox \
+    libsox-dev \
+    libsox-fmt-all \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libswresample-dev \
+    libavdevice-dev \
+    libavfilter-dev \
+    pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# 安裝 uv
+RUN pip install --no-cache-dir uv
+
+# 複製專案檔案
+COPY pyproject.toml /app/
+COPY backend /app/backend
+
+# 分步安裝依賴，確保兼容性
+# 1. 先安裝 torch（CPU 版本）
+RUN uv pip install --system --no-cache \
+    torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# 2. 安裝其他依賴
+RUN uv pip install --system --no-cache \
+    qwen-tts \
+    fastapi \
+    uvicorn[standard] \
+    python-multipart \
+    soundfile \
+    huggingface-hub \
+    tqdm
+
+# 創建必要目錄
+RUN mkdir -p /app/backend/uploads /app/backend/outputs /app/models
+
+# 設置環境變數
+ENV PYTHONUNBUFFERED=1
+ENV MODEL_PATH=/app/models/Qwen3-TTS-12Hz-1.7B-Base
+ENV UPLOAD_DIR=/app/backend/uploads
+ENV OUTPUT_DIR=/app/backend/outputs
+ENV USE_CPU=true
+ENV LD_LIBRARY_PATH=/usr/local/lib/python3.12/site-packages/torch/lib:$LD_LIBRARY_PATH
+
+# 暴露端口
+EXPOSE 8000
+
+# 健康檢查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8000/api/status || exit 1
+
+# 啟動命令
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

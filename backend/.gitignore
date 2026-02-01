@@ -1,0 +1,18 @@
+# 上傳的音訊檔案
+uploads/
+
+# 生成的音訊檔案
+outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 環境
+.env
+.venv
+env/
+venv/
