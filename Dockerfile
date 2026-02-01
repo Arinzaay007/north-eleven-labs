@@ -8,7 +8,11 @@ WORKDIR /app/frontend
 
 # 複製前端文件
 COPY frontend/package.json frontend/yarn.lock ./
-COPY frontend/node_modules ./node_modules
+
+# 安裝依賴
+RUN yarn install --frozen-lockfile
+
+# 複製前端源碼
 COPY frontend/ ./
 
 # 設置 API URL（HF Spaces 使用同一域名）
