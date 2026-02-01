@@ -60,7 +60,7 @@ function App() {
     // 檢查檔案類型
     const validTypes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'audio/mp3']
     if (!validTypes.includes(file.type) && !file.name.match(/\.(wav|mp3|flac)$/i)) {
-      setStatus('❌ 不支援的檔案格式。請上傳 WAV、MP3 或 FLAC 檔案')
+      setStatus('不支援的檔案格式。請上傳 WAV、MP3 或 FLAC 檔案')
       setStatusType('error')
       return
     }
@@ -91,10 +91,10 @@ function App() {
 
       const data = await response.json()
       setRefAudioId(data.audio_id)
-      setStatus(`✓ 音訊已上傳 (${data.duration.toFixed(1)}秒)`)
+      setStatus(`音訊已上傳 (${data.duration.toFixed(1)}秒)`)
       setStatusType('success')
     } catch (error) {
-      setStatus(`❌ 上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatus(`上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
       setStatusType('error')
       setRefAudioFile(null)
       setRefAudioId('')
@@ -122,19 +122,19 @@ function App() {
   // 處理生成
   const handleGenerate = async () => {
     if (!refAudioId) {
-      setStatus('❌ 請先上傳參考音訊')
+      setStatus('請先上傳參考音訊')
       setStatusType('error')
       return
     }
 
     if (!xVectorOnly && !refText.trim()) {
-      setStatus('❌ 請輸入參考文字')
+      setStatus('請輸入參考文字')
       setStatusType('error')
       return
     }
 
     if (!targetText.trim()) {
-      setStatus('❌ 請輸入目標文字')
+      setStatus('請輸入目標文字')
       setStatusType('error')
       return
     }
@@ -166,7 +166,7 @@ function App() {
       const data = await response.json()
       setGeneratedAudioId(data.audio_id)
       setGeneratedAudioUrl(`${API_URL}/download/${data.audio_id}`)
-      setStatus(`✓ 生成完成！音訊長度: ${data.duration.toFixed(1)}秒`)
+      setStatus(`生成完成！音訊長度: ${data.duration.toFixed(1)}秒`)
       setStatusType('success')
 
       // 自動播放
@@ -174,7 +174,7 @@ function App() {
         audioRef.current?.play()
       }, 100)
     } catch (error) {
-      setStatus(`❌ 生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatus(`生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
       setStatusType('error')
     } finally {
       setLoading(false)
@@ -207,8 +207,8 @@ function App() {
 
       {/* Hero Section */}
       <section className="flex flex-col items-center gap-8 bg-background-secondary px-6 md:px-12 pt-16 pb-16 w-full">
-        <div className="flex items-center gap-2 bg-[#1e25324d] border border-[#6366f133] rounded-full px-4 py-2 shadow-[0_0_8px_rgba(99,102,241,0.53)]">
-          <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(99,102,241,0.53)]" />
+        <div className="flex items-center gap-2 bg-[#1e25324d] border border-[#6366f133] rounded-full px-4 py-2 shadow-[0_0_8px_rgba(99,102,241,0.53)] transition-all duration-200 hover:shadow-[0_0_12px_rgba(99,102,241,0.6)]">
+          <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(99,102,241,0.53)] animate-pulse" />
           <span className="text-brand-light text-sm font-medium">由阿里巴巴 Qwen 團隊提供</span>
         </div>
         <h1 className="text-white text-5xl md:text-6xl font-bold text-center px-4">用 AI 複製任何聲音</h1>
@@ -217,7 +217,7 @@ function App() {
         </p>
         <button
           onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
-          className="flex items-center gap-2 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-4 shadow-[0_4px_16px_rgba(99,102,241,0.2)] hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-4 shadow-[0_4px_16px_rgba(99,102,241,0.2)] hover:shadow-[0_6px_24px_rgba(99,102,241,0.35)] hover:transform hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-secondary"
         >
           <ArrowDown className="w-5 h-5 text-white" />
           <span className="text-white text-lg font-semibold">開始使用</span>
@@ -233,30 +233,43 @@ function App() {
           <div className="flex flex-col gap-6 bg-background-tertiary border border-border rounded-xl p-6 md:p-8 w-full lg:w-1/2">
             {/* Reference Audio Section */}
             <div className="flex flex-col gap-4 w-full">
-              <div className="flex items-center gap-2 bg-brand-primary rounded-md px-4 py-2 w-full">
-                <Music className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-3 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-lg px-4 py-3 w-full shadow-sm">
+                <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
+                  <Music className="w-4 h-4 text-white" />
+                </div>
                 <span className="text-white text-base font-semibold">參考音訊（上傳要複製的聲音樣本）</span>
               </div>
               <div
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onClick={handleUploadClick}
-                className="flex flex-col items-center justify-center gap-4 bg-background-secondary border-2 border-border-light rounded-lg px-8 py-10 min-h-[220px] w-full cursor-pointer hover:border-brand-primary transition-colors"
+                className="flex flex-col items-center justify-center gap-4 bg-background-secondary border-2 border-border-light rounded-lg px-8 py-10 min-h-[220px] w-full cursor-pointer hover:border-brand-primary hover:bg-[#161923] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-primary"
+                role="button"
+                tabIndex={0}
+                aria-label="上傳參考音訊檔案"
               >
                 <div className="flex flex-col items-center gap-3">
                   {uploading ? (
-                    <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+                    <>
+                      <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+                      <span className="text-text-secondary text-base font-medium">上傳中...</span>
+                    </>
                   ) : refAudioFile ? (
                     <>
-                      <CheckCircle className="w-12 h-12 text-green-500" />
+                      <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                        <CheckCircle className="w-8 h-8 text-green-500" />
+                      </div>
                       <span className="text-text-secondary text-base font-medium">{refAudioFile.name}</span>
+                      <span className="text-text-subtle text-sm">點擊以重新上傳</span>
                     </>
                   ) : (
                     <>
-                      <Upload className="w-12 h-12 text-text-subtle" />
+                      <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                        <Upload className="w-8 h-8 text-brand-primary" />
+                      </div>
                       <span className="text-text-secondary text-lg font-medium">拖放音訊至此處</span>
-                      <span className="text-text-muted text-sm">- 或 -</span>
-                      <span className="text-text-subtle text-base">點擊上傳</span>
+                      <span className="text-text-muted text-sm">或點擊選擇檔案</span>
+                      <span className="text-text-subtle text-xs mt-1">支援 WAV、MP3、FLAC 格式</span>
                     </>
                   )}
                 </div>
@@ -264,17 +277,19 @@ function App() {
 
               {/* 參考音訊播放器 */}
               {refAudioUrl && (
-                <div className="flex flex-col gap-3 w-full">
+                <div className="flex flex-col gap-3 w-full p-4 bg-background-secondary rounded-lg border border-border transition-all duration-200">
                   <div className="flex items-center gap-2">
-                    <Play className="w-4 h-4 text-brand-primary" />
-                    <span className="text-text-tertiary text-sm">預覽參考音訊</span>
+                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                      <Play className="w-4 h-4 text-brand-primary" />
+                    </div>
+                    <span className="text-text-tertiary text-sm font-medium">預覽參考音訊</span>
                   </div>
                   <audio
                     ref={refAudioRef}
                     src={refAudioUrl}
                     controls
-                    className="w-full h-12"
-                    style={{ backgroundColor: '#1e2532', borderRadius: '6px' }}
+                    className="w-full h-12 rounded-md"
+                    style={{ backgroundColor: '#1e2532' }}
                   />
                 </div>
               )}
@@ -282,8 +297,10 @@ function App() {
 
             {/* Reference Text Section */}
             <div className="flex flex-col gap-4 w-full">
-              <div className="flex items-center gap-2 bg-brand-primary rounded-md px-4 py-2 w-full">
-                <FileText className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-3 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-lg px-4 py-3 w-full shadow-sm">
+                <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
                 <span className="text-white text-base font-semibold">參考文字（參考音訊的逐字稿）</span>
               </div>
               <textarea
@@ -291,47 +308,58 @@ function App() {
                 onChange={(e) => setRefText(e.target.value)}
                 placeholder="輸入參考音訊中說的完整內容..."
                 disabled={xVectorOnly}
-                className="bg-background-secondary border border-border-light rounded-lg p-4 h-[140px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:border-brand-primary transition-colors resize-none disabled:opacity-50"
+                className="bg-background-secondary border border-border-light rounded-lg p-4 h-[140px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="參考文字輸入"
               />
             </div>
 
             {/* X-Vector Section */}
-            <div
-              onClick={() => setXVectorOnly(!xVectorOnly)}
-              className="flex items-center gap-3 bg-background-secondary rounded-lg p-4 w-full cursor-pointer hover:bg-[#1a1e28] transition-colors"
+            <label
+              className="flex items-center gap-3 bg-background-secondary rounded-lg p-4 w-full cursor-pointer hover:bg-[#1a1e28] transition-all duration-200 group"
             >
-              <div className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-colors ${xVectorOnly ? 'border-brand-primary bg-brand-primary' : 'border-text-disabled'}`}>
+              <input
+                type="checkbox"
+                checked={xVectorOnly}
+                onChange={(e) => setXVectorOnly(e.target.checked)}
+                className="sr-only"
+                aria-label="僅使用 x-vector 模式"
+              />
+              <div className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-all duration-200 ${xVectorOnly ? 'border-brand-primary bg-brand-primary' : 'border-text-disabled group-hover:border-brand-primary/50'}`}>
                 {xVectorOnly && <CheckCircle className="w-3.5 h-3.5 text-white" />}
               </div>
               <span className="text-text-tertiary text-sm">僅使用 x-vector（無需參考文字，但品質較低）</span>
-            </div>
+            </label>
           </div>
 
           {/* Right Column */}
           <div className="flex flex-col gap-6 bg-background-tertiary border border-border rounded-xl p-6 md:p-8 w-full lg:w-1/2">
             {/* Target Text Section */}
             <div className="flex flex-col gap-4 w-full">
-              <div className="flex items-center gap-2 bg-brand-primary rounded-md px-4 py-2 w-full">
-                <MessageSquare className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-3 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-lg px-4 py-3 w-full shadow-sm">
+                <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-white" />
+                </div>
                 <span className="text-white text-base font-semibold">目標文字（要用複製聲音合成的文字）</span>
               </div>
               <textarea
                 value={targetText}
                 onChange={(e) => setTargetText(e.target.value)}
                 placeholder="輸入您想讓複製聲音說的內容..."
-                className="bg-background-secondary border border-border-light rounded-lg p-4 h-[180px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:border-brand-primary transition-colors resize-none"
+                className="bg-background-secondary border border-border-light rounded-lg p-4 h-[180px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 resize-none"
+                aria-label="目標文字輸入"
               />
             </div>
 
             {/* Language Selection */}
             <div className="flex flex-col gap-3 w-full">
-              <div className="flex items-center gap-2 bg-brand-primary rounded-sm px-3 py-2">
-                <span className="text-white text-sm font-semibold">語言選擇</span>
+              <div className="flex items-center gap-2 px-1 py-1">
+                <span className="text-text-tertiary text-sm font-medium">語言選擇</span>
               </div>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
-                className="bg-background-secondary border border-border-dark rounded-md px-4 py-3 w-full text-text-secondary text-base focus:outline-none focus:border-brand-primary transition-colors cursor-pointer"
+                className="bg-background-secondary border border-border-dark rounded-md px-4 py-3 w-full text-text-secondary text-base focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 cursor-pointer hover:border-brand-primary/50"
+                aria-label="選擇語言"
               >
                 <option value="Chinese">中文</option>
                 <option value="English">英文</option>
@@ -344,7 +372,8 @@ function App() {
             <button
               onClick={handleGenerate}
               disabled={loading || !refAudioId || !targetText.trim() || (!xVectorOnly && !refText.trim())}
-              className="flex items-center justify-center gap-3 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-5 shadow-[0_6px_20px_rgba(99,102,241,0.27)] w-full hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-3 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-5 shadow-[0_6px_20px_rgba(99,102,241,0.27)] w-full hover:shadow-[0_8px_28px_rgba(99,102,241,0.4)] hover:transform hover:scale-[1.01] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-[0_6px_20px_rgba(99,102,241,0.27)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-tertiary cursor-pointer"
+              aria-label="開始複製並生成語音"
             >
               {loading ? (
                 <>
@@ -361,8 +390,10 @@ function App() {
 
             {/* Output Section */}
             <div className="flex flex-col gap-4 w-full">
-              <div className="flex items-center gap-2 bg-brand-primary rounded-md px-4 py-2 w-full">
-                <Headphones className="w-5 h-5 text-white" />
+              <div className="flex items-center gap-3 bg-gradient-to-r from-brand-primary to-brand-secondary rounded-lg px-4 py-3 w-full shadow-sm">
+                <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
+                  <Headphones className="w-4 h-4 text-white" />
+                </div>
                 <span className="text-white text-base font-semibold">生成的音訊</span>
               </div>
               <div className="flex flex-col gap-4 bg-background-secondary rounded-lg p-6 w-full">
@@ -372,31 +403,56 @@ function App() {
                       ref={audioRef}
                       src={generatedAudioUrl}
                       controls
-                      className="w-full h-12"
+                      className="w-full h-12 rounded-md"
+                      style={{ backgroundColor: '#1e2532' }}
                     />
                     <a
                       href={generatedAudioUrl}
                       download={`qwen3tts_${generatedAudioId}.wav`}
-                      className="flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-secondary rounded-md px-5 py-3 transition-colors"
+                      className="flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-secondary rounded-md px-5 py-3 transition-all duration-200 hover:shadow-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-secondary"
+                      aria-label="下載生成的音訊檔案"
                     >
                       <Download className="w-5 h-5 text-white" />
                       <span className="text-white text-base font-medium">下載音訊</span>
                     </a>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center bg-[#1f2332] rounded-md p-10 w-full">
-                    <Music className="w-10 h-10 text-text-disabled" />
+                  <div className="flex flex-col items-center justify-center gap-3 bg-[#1f2332] rounded-md p-10 w-full">
+                    <div className="w-16 h-16 rounded-full bg-text-disabled/10 flex items-center justify-center">
+                      <Music className="w-8 h-8 text-text-disabled" />
+                    </div>
+                    <span className="text-text-disabled text-sm">尚無生成的音訊</span>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Status Section */}
-            <div className="flex items-center gap-3 bg-background-secondary border border-border rounded-md px-4 py-4 w-full">
-              {statusType === 'info' && <Info className="w-5 h-5 text-brand-primary flex-shrink-0" />}
-              {statusType === 'success' && <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />}
-              {statusType === 'error' && <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />}
-              <span className="text-text-muted text-base">{status}</span>
+            <div className={`flex items-center gap-3 rounded-md px-4 py-4 w-full transition-all duration-200 ${
+              statusType === 'info' ? 'bg-brand-primary/10 border border-brand-primary/30' :
+              statusType === 'success' ? 'bg-green-500/10 border border-green-500/30' :
+              'bg-red-500/10 border border-red-500/30'
+            }`}>
+              {statusType === 'info' && (
+                <div className="w-5 h-5 flex-shrink-0">
+                  <Info className="w-5 h-5 text-brand-primary" />
+                </div>
+              )}
+              {statusType === 'success' && (
+                <div className="w-5 h-5 flex-shrink-0">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                </div>
+              )}
+              {statusType === 'error' && (
+                <div className="w-5 h-5 flex-shrink-0">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                </div>
+              )}
+              <span className={`text-base ${
+                statusType === 'info' ? 'text-brand-light' :
+                statusType === 'success' ? 'text-green-400' :
+                'text-red-400'
+              }`}>{status}</span>
             </div>
           </div>
         </div>
