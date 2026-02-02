@@ -44,6 +44,8 @@ function App() {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1)
   const [refTextError, setRefTextError] = useState<string>('')
   const [targetTextError, setTargetTextError] = useState<string>('')
+  const [uploadWarning, setUploadWarning] = useState<string>('')
+  const [loadingExample, setLoadingExample] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -63,10 +65,21 @@ function App() {
   const handleFileSelect = async (file: File) => {
     if (!file) return
 
+    // 清除之前的警告
+    setUploadWarning('')
+
     // 檢查檔案類型
     const validTypes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'audio/mp3']
     if (!validTypes.includes(file.type) && !file.name.match(/\.(wav|mp3|flac)$/i)) {
       setStatus('不支援的檔案格式。請上傳 WAV、MP3 或 FLAC 檔案')
+      setStatusType('error')
+      return
+    }
+
+    // 檢查檔案大小（限制 10MB）
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      setStatus('檔案過大。請上傳小於 10MB 的音訊檔案')
       setStatusType('error')
       return
     }
@@ -97,8 +110,21 @@ function App() {
 
       const data = await response.json()
       setRefAudioId(data.audio_id)
-      setStatus(`音訊已上傳 (${data.duration.toFixed(1)}秒)`)
-      setStatusType('success')
+
+      // 處理警告訊息
+      if (data.warning) {
+        setUploadWarning(data.warning)
+        if (data.was_trimmed) {
+          setStatus(`音訊已上傳並裁切為 ${data.duration.toFixed(1)} 秒（原始 ${data.original_duration.toFixed(1)} 秒）`)
+        } else {
+          setStatus(`音訊已上傳 (${data.duration.toFixed(1)} 秒)`)
+        }
+        setStatusType('success')
+      } else {
+        setStatus(`音訊已上傳 (${data.duration.toFixed(1)} 秒)`)
+        setStatusType('success')
+      }
+
       setCurrentStep(2) // 自動進到下一步
     } catch (error) {
       setStatus(`上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
@@ -138,6 +164,51 @@ function App() {
   const handleUploadClick = () => {
     setCurrentStep(1)
     fileInputRef.current?.click()
+  }
+
+  // 載入範例音檔
+  const handleLoadExample = async () => {
+    setLoadingExample(true)
+    setCurrentStep(1)
+
+    try {
+      // 獲取範例音檔
+      const response = await fetch('/example.wav')
+      if (!response.ok) throw new Error('無法載入範例音檔')
+
+      const blob = await response.blob()
+      const file = new File([blob], 'example.wav', { type: 'audio/wav' })
+
+      // 上傳範例音檔
+      await handleFileSelect(file)
+
+      // 自動填入參考文字
+      const exampleRefText = '今天來整理一下 mac finder 最實用的幾個快速鍵，目標很簡單，讓你擺脫滑鼠用更直覺的方式，大幅提昇你'
+      setRefText(exampleRefText)
+      setRefTextError('')
+
+      // 自動填入目標文字
+      const exampleTargetText = '的工作效率，首先第一個快速鍵是檔案重新命名，第二個是快速預覽，第三個是批次處理檔案'
+      setTargetText(exampleTargetText)
+      setTargetTextError('')
+
+      // 自動進到步驟 3
+      setCurrentStep(3)
+
+      // 提示使用者可以直接生成或修改文字
+      setStatus('範例已載入！可以直接生成或修改文字後再生成')
+      setStatusType('info')
+
+      // 滾動到目標文字區域
+      setTimeout(() => {
+        targetTextRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 500)
+    } catch (error) {
+      setStatus(`載入範例失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatusType('error')
+    } finally {
+      setLoadingExample(false)
+    }
   }
 
   // 當步驟改變時滾動到相應位置
@@ -344,6 +415,29 @@ function App() {
                 )}
               </div>
 
+              {/* 快速測試按鈕 */}
+              {!refAudioFile && (
+                <button
+                  onClick={handleLoadExample}
+                  disabled={loadingExample}
+                  className="flex items-center justify-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 hover:border-green-500/50 rounded-lg px-4 py-3 w-full transition-all duration-200 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  {loadingExample ? (
+                    <>
+                      <Loader2 className="w-5 h-5 text-green-400 animate-spin" />
+                      <span className="text-green-400 text-sm font-medium">載入中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-green-400 text-sm font-medium">
+                        快速測試：使用範例音檔（10秒）
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
+
               {/* 提示訊息 */}
               {!refAudioFile && (
                 <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
@@ -389,6 +483,14 @@ function App() {
                   )}
                 </div>
               </div>
+
+              {/* 上傳警告訊息 */}
+              {uploadWarning && (
+                <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-yellow-400 text-sm">{uploadWarning}</p>
+                </div>
+              )}
 
               {/* 參考音訊播放器 */}
               {refAudioUrl && (

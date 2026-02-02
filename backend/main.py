@@ -197,29 +197,46 @@ async def upload_audio(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # 檢查音訊長度
+        # 讀取音訊
         data, sr = sf.read(str(file_path))
-        duration = len(data) / sr
+        original_duration = len(data) / sr
 
-        if duration < 3 or duration > 10:
-            # 警告但不拒絕
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "audio_id": audio_id,
-                    "filename": file.filename,
-                    "duration": duration,
-                    "sample_rate": sr,
-                    "warning": f"建議音訊長度為 3-10 秒，目前為 {duration:.1f} 秒"
-                }
-            )
+        # 處理音訊長度
+        warning = None
+        was_trimmed = False
 
-        return {
+        if original_duration < 3:
+            # 太短：警告但接受
+            warning = f"音訊長度 {original_duration:.1f} 秒，建議 3-10 秒以獲得最佳效果"
+            duration = original_duration
+        elif original_duration > 10:
+            # 太長：自動裁切到前 10 秒
+            max_samples = int(10 * sr)
+            data = data[:max_samples]
+
+            # 儲存裁切後的音訊
+            sf.write(str(file_path), data, sr)
+
+            duration = 10.0
+            was_trimmed = True
+            warning = f"原始音訊 {original_duration:.1f} 秒已自動裁切為前 10 秒"
+        else:
+            # 長度適中
+            duration = original_duration
+
+        response_data = {
             "audio_id": audio_id,
             "filename": file.filename,
             "duration": duration,
             "sample_rate": sr,
         }
+
+        if warning:
+            response_data["warning"] = warning
+            response_data["was_trimmed"] = was_trimmed
+            response_data["original_duration"] = original_duration
+
+        return response_data
 
     except Exception as e:
         # 清理失敗的檔案

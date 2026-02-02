@@ -76,6 +76,9 @@ RUN echo 'server { \n\
     listen 7860; \n\
     server_name _; \n\
     \n\
+    # 允許上傳最大 20MB 的文件 \n\
+    client_max_body_size 20M; \n\
+    \n\
     # 前端靜態文件 \n\
     location / { \n\
         root /app/frontend/dist; \n\
