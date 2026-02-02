@@ -1,3 +1,13 @@
+---
+title: Qwen3-TTS Voice Clone
+emoji: 🎤
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+license: apache-2.0
+---
+
 # Qwen3-TTS Voice Clone
 
 A full-stack voice cloning web application powered by Qwen3-TTS-12Hz-1.7B-Base model. Clone any voice with just 3-10 seconds of reference audio.
