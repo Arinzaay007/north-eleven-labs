@@ -10,7 +10,7 @@ license: apache-2.0
 
 # Qwen3-TTS Voice Clone
 
-A full-stack voice cloning web application powered by Qwen3-TTS-12Hz-1.7B-Base model. Clone any voice with just 3-10 seconds of reference audio.
+A full-stack web application that extracts and packages the voice cloning functionality from Qwen3-TTS-12Hz-1.7B-Base. Clone any voice with just 3-10 seconds of reference audio through an intuitive web interface.
 
 ## Features
 
@@ -23,7 +23,9 @@ A full-stack voice cloning web application powered by Qwen3-TTS-12Hz-1.7B-Base m
 
 ## Demo
 
-> Add screenshots or demo video here
+**Live Demo (CPU)**: [Hugging Face Spaces](https://huggingface.co/spaces/chienweichang/qwen3-tts-voice-clone-cpu)
+
+> Note: The live demo runs on CPU environment for accessibility. For faster generation, deploy locally with GPU support.
 
 ## Quick Start
 
@@ -207,26 +209,15 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Acknowledgments
 
-This project is built upon:
+This project extracts and packages the voice cloning feature from:
 - [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) by Alibaba Qwen Team
-- Model: Qwen3-TTS-12Hz-1.7B-Base
+- Model: [Qwen3-TTS-12Hz-1.7B-Base](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base)
+
+All credit for the core TTS technology goes to the Qwen team.
 
 ## License
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
-
-## Citation
-
-If you use this project in your research, please cite:
-
-```bibtex
-@software{qwen3-tts-voice-clone,
-  author = {Your Name},
-  title = {Qwen3-TTS Voice Clone},
-  year = {2024},
-  url = {https://github.com/ammosu/qwen3-tts-voice-clone}
-}
-```
 
 ## Support
 
