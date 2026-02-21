@@ -282,7 +282,7 @@ function App() {
       <section className="flex flex-col items-center gap-8 bg-background-secondary px-6 md:px-12 pt-16 pb-16 w-full">
         <div className="flex items-center gap-2 bg-[#1e25324d] border border-[#6366f133] rounded-full px-4 py-2 shadow-[0_0_8px_rgba(99,102,241,0.53)] transition-all duration-200 hover:shadow-[0_0_12px_rgba(99,102,241,0.6)]">
           <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(99,102,241,0.53)] animate-pulse" />
-          <span className="text-brand-light text-sm font-medium">Powered by Qwen3-TTS AI Model</span>
+          <span className="text-brand-light text-sm font-medium">Built by Arinzaay</span>
         </div>
         <h1 className="text-white text-5xl md:text-6xl font-bold text-center px-4">Clone Any Voice with AI</h1>
         <p className="text-text-muted text-xl text-center leading-[1.6] max-w-2xl px-4">
@@ -722,7 +722,7 @@ function App() {
             </div>
           </div>
           <span className="text-text-subtle text-sm text-center md:text-right">
-            © 2025 North Eleven Labs. Powered by Qwen3-TTS.
+            © 2025 North Eleven Labs. Built by Arinzaay.
           </span>
         </div>
       </footer>
