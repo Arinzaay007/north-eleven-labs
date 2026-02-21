@@ -18,26 +18,23 @@ import {
   HelpCircle,
 } from 'lucide-react'
 
-// 开发环境使用 localhost，生产环境可通过环境变量配置
-// HF Spaces 使用相對路徑（透過 Nginx 代理）
 const API_URL = import.meta.env.VITE_API_URL || (
   window.location.hostname.includes('hf.space') || window.location.hostname.includes('huggingface.co')
-    ? '' // HF Spaces: 使用相對路徑
-    : 'http://localhost:8000' // 本地開發
+    ? ''
+    : 'http://localhost:8000'
 )
 
 function App() {
-  // 狀態管理
   const [refAudioFile, setRefAudioFile] = useState<File | null>(null)
   const [refAudioId, setRefAudioId] = useState<string>('')
-  const [refAudioUrl, setRefAudioUrl] = useState<string>('')  // 用於播放上傳的參考音訊
+  const [refAudioUrl, setRefAudioUrl] = useState<string>('')
   const [refText, setRefText] = useState('')
   const [targetText, setTargetText] = useState('')
-  const [language, setLanguage] = useState('Chinese')
+  const [language, setLanguage] = useState('English')
   const [xVectorOnly, setXVectorOnly] = useState(false)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [status, setStatus] = useState('準備好複製聲音')
+  const [status, setStatus] = useState('Ready to clone a voice')
   const [statusType, setStatusType] = useState<'info' | 'success' | 'error'>('info')
   const [generatedAudioId, setGeneratedAudioId] = useState<string>('')
   const [generatedAudioUrl, setGeneratedAudioUrl] = useState<string>('')
@@ -52,7 +49,6 @@ function App() {
   const refAudioRef = useRef<HTMLAudioElement>(null)
   const targetTextRef = useRef<HTMLDivElement>(null)
 
-  // 清理 blob URL，避免記憶體洩漏
   useEffect(() => {
     return () => {
       if (refAudioUrl) {
@@ -61,37 +57,32 @@ function App() {
     }
   }, [refAudioUrl])
 
-  // 處理檔案選擇
   const handleFileSelect = async (file: File) => {
     if (!file) return
 
-    // 清除之前的警告
     setUploadWarning('')
 
-    // 檢查檔案類型
     const validTypes = ['audio/wav', 'audio/mpeg', 'audio/flac', 'audio/mp3']
     if (!validTypes.includes(file.type) && !file.name.match(/\.(wav|mp3|flac)$/i)) {
-      setStatus('不支援的檔案格式。請上傳 WAV、MP3 或 FLAC 檔案')
+      setStatus('Unsupported file format. Please upload a WAV, MP3, or FLAC file.')
       setStatusType('error')
       return
     }
 
-    // 檢查檔案大小（限制 10MB）
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    const maxSize = 10 * 1024 * 1024
     if (file.size > maxSize) {
-      setStatus('檔案過大。請上傳小於 10MB 的音訊檔案')
+      setStatus('File too large. Please upload an audio file smaller than 10MB.')
       setStatusType('error')
       return
     }
 
     setRefAudioFile(file)
 
-    // 創建本地 URL 用於播放預覽
     const localUrl = URL.createObjectURL(file)
     setRefAudioUrl(localUrl)
 
     setUploading(true)
-    setStatus('正在上傳音訊...')
+    setStatus('Uploading audio...')
     setStatusType('info')
 
     try {
@@ -105,29 +96,28 @@ function App() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.detail || '上傳失敗')
+        throw new Error(error.detail || 'Upload failed')
       }
 
       const data = await response.json()
       setRefAudioId(data.audio_id)
 
-      // 處理警告訊息
       if (data.warning) {
         setUploadWarning(data.warning)
         if (data.was_trimmed) {
-          setStatus(`音訊已上傳並裁切為 ${data.duration.toFixed(1)} 秒（原始 ${data.original_duration.toFixed(1)} 秒）`)
+          setStatus(`Audio uploaded and trimmed to ${data.duration.toFixed(1)}s (original: ${data.original_duration.toFixed(1)}s)`)
         } else {
-          setStatus(`音訊已上傳 (${data.duration.toFixed(1)} 秒)`)
+          setStatus(`Audio uploaded (${data.duration.toFixed(1)}s)`)
         }
         setStatusType('success')
       } else {
-        setStatus(`音訊已上傳 (${data.duration.toFixed(1)} 秒)`)
+        setStatus(`Audio uploaded (${data.duration.toFixed(1)}s)`)
         setStatusType('success')
       }
 
-      setCurrentStep(2) // 自動進到下一步
+      setCurrentStep(2)
     } catch (error) {
-      setStatus(`上傳失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatus(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setStatusType('error')
       setRefAudioFile(null)
       setRefAudioId('')
@@ -136,20 +126,17 @@ function App() {
     }
   }
 
-  // 檢查步驟完成狀態
   const isStep1Complete = refAudioId !== ''
   const isStep2Complete = isStep1Complete && (xVectorOnly || refText.trim() !== '')
   const canGenerate = isStep2Complete && targetText.trim() !== ''
 
-  // 取得禁用原因
   const getDisabledReason = (): string => {
-    if (!refAudioId) return '請先上傳參考音訊'
-    if (!xVectorOnly && !refText.trim()) return '請輸入參考文字'
-    if (!targetText.trim()) return '請輸入目標文字'
+    if (!refAudioId) return 'Please upload a reference audio first'
+    if (!xVectorOnly && !refText.trim()) return 'Please enter the reference text'
+    if (!targetText.trim()) return 'Please enter the target text'
     return ''
   }
 
-  // 處理拖放
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
@@ -160,86 +147,75 @@ function App() {
     e.preventDefault()
   }
 
-  // 處理點擊上傳
   const handleUploadClick = () => {
     setCurrentStep(1)
     fileInputRef.current?.click()
   }
 
-  // 載入範例音檔
   const handleLoadExample = async () => {
     setLoadingExample(true)
     setCurrentStep(1)
 
     try {
-      // 獲取範例音檔
       const response = await fetch('/example.wav')
-      if (!response.ok) throw new Error('無法載入範例音檔')
+      if (!response.ok) throw new Error('Could not load example audio')
 
       const blob = await response.blob()
       const file = new File([blob], 'example.wav', { type: 'audio/wav' })
 
-      // 上傳範例音檔
       await handleFileSelect(file)
 
-      // 自動填入參考文字
-      const exampleRefText = '今天來整理一下 mac finder 最實用的幾個快速鍵，目標很簡單，讓你擺脫滑鼠用更直覺的方式，大幅提昇你'
+      const exampleRefText = 'Today let me go over some of the most useful keyboard shortcuts in Mac Finder. The goal is simple — help you ditch the mouse and work more intuitively.'
       setRefText(exampleRefText)
       setRefTextError('')
 
-      // 自動填入目標文字
-      const exampleTargetText = '的工作效率，首先第一個快速鍵是檔案重新命名，第二個是快速預覽，第三個是批次處理檔案'
+      const exampleTargetText = 'Welcome to North Eleven Labs, where we clone voices with cutting-edge AI technology.'
       setTargetText(exampleTargetText)
       setTargetTextError('')
 
-      // 自動進到步驟 3
       setCurrentStep(3)
 
-      // 提示使用者可以直接生成或修改文字
-      setStatus('範例已載入！可以直接生成或修改文字後再生成')
+      setStatus('Example loaded! You can generate now or edit the text first.')
       setStatusType('info')
 
-      // 滾動到目標文字區域
       setTimeout(() => {
         targetTextRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       }, 500)
     } catch (error) {
-      setStatus(`載入範例失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatus(`Failed to load example: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setStatusType('error')
     } finally {
       setLoadingExample(false)
     }
   }
 
-  // 當步驟改變時滾動到相應位置
   useEffect(() => {
     if (currentStep === 3 && targetTextRef.current) {
       targetTextRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   }, [currentStep])
 
-  // 處理生成
   const handleGenerate = async () => {
     if (!refAudioId) {
-      setStatus('請先上傳參考音訊')
+      setStatus('Please upload a reference audio first')
       setStatusType('error')
       return
     }
 
     if (!xVectorOnly && !refText.trim()) {
-      setStatus('請輸入參考文字')
+      setStatus('Please enter the reference text')
       setStatusType('error')
       return
     }
 
     if (!targetText.trim()) {
-      setStatus('請輸入目標文字')
+      setStatus('Please enter the target text')
       setStatusType('error')
       return
     }
 
     setLoading(true)
-    setStatus('正在生成語音...')
+    setStatus('Generating voice...')
     setStatusType('info')
 
     try {
@@ -259,21 +235,20 @@ function App() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.detail || '生成失敗')
+        throw new Error(error.detail || 'Generation failed')
       }
 
       const data = await response.json()
       setGeneratedAudioId(data.audio_id)
       setGeneratedAudioUrl(`${API_URL}/download/${data.audio_id}`)
-      setStatus(`生成完成！音訊長度: ${data.duration.toFixed(1)}秒`)
+      setStatus(`Generation complete! Audio length: ${data.duration.toFixed(1)}s`)
       setStatusType('success')
 
-      // 自動播放
       setTimeout(() => {
         audioRef.current?.play()
       }, 100)
     } catch (error) {
-      setStatus(`生成失敗: ${error instanceof Error ? error.message : '未知錯誤'}`)
+      setStatus(`Generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       setStatusType('error')
     } finally {
       setLoading(false)
@@ -282,7 +257,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-background-primary flex flex-col">
-      {/* 隱藏的檔案輸入 */}
       <input
         ref={fileInputRef}
         type="file"
@@ -298,8 +272,8 @@ function App() {
             <Volume2 className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-white text-xl font-bold">Qwen3-TTS</span>
-            <span className="text-text-subtle text-sm">語音複製工作室</span>
+            <span className="text-white text-xl font-bold">North Eleven Labs</span>
+            <span className="text-text-subtle text-sm">Voice Cloning Studio</span>
           </div>
         </div>
       </nav>
@@ -308,26 +282,26 @@ function App() {
       <section className="flex flex-col items-center gap-8 bg-background-secondary px-6 md:px-12 pt-16 pb-16 w-full">
         <div className="flex items-center gap-2 bg-[#1e25324d] border border-[#6366f133] rounded-full px-4 py-2 shadow-[0_0_8px_rgba(99,102,241,0.53)] transition-all duration-200 hover:shadow-[0_0_12px_rgba(99,102,241,0.6)]">
           <div className="w-2 h-2 rounded-full bg-brand-primary shadow-[0_0_8px_rgba(99,102,241,0.53)] animate-pulse" />
-          <span className="text-brand-light text-sm font-medium">由阿里巴巴 Qwen 團隊提供</span>
+          <span className="text-brand-light text-sm font-medium">Powered by Qwen3-TTS AI Model</span>
         </div>
-        <h1 className="text-white text-5xl md:text-6xl font-bold text-center px-4">用 AI 複製任何聲音</h1>
+        <h1 className="text-white text-5xl md:text-6xl font-bold text-center px-4">Clone Any Voice with AI</h1>
         <p className="text-text-muted text-xl text-center leading-[1.6] max-w-2xl px-4">
-          上傳 3-10 秒語音樣本，即可生成該聲音的自然語音內容。支援中、英、日、韓等多種語言。
+          Upload a 3–10 second voice sample and generate natural speech in that voice. Supports English, Chinese, Japanese, Korean, and more.
         </p>
         <button
           onClick={() => window.scrollTo({ top: 400, behavior: 'smooth' })}
           className="flex items-center gap-2 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-4 shadow-[0_4px_16px_rgba(99,102,241,0.2)] hover:shadow-[0_6px_24px_rgba(99,102,241,0.35)] hover:transform hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-secondary"
         >
           <ArrowDown className="w-5 h-5 text-white" />
-          <span className="text-white text-lg font-semibold">開始使用</span>
+          <span className="text-white text-lg font-semibold">Get Started</span>
         </button>
       </section>
 
       {/* Main Area */}
       <main className="flex flex-col gap-8 bg-background-primary px-6 md:px-12 lg:px-24 pt-12 pb-16 w-full max-w-7xl mx-auto">
-        {/* 步驟指示器 */}
+        {/* Step Indicator */}
         <div className="flex items-center justify-center gap-4 w-full">
-          {/* 步驟 1 */}
+          {/* Step 1 */}
           <div className="flex items-center gap-3">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
               isStep1Complete
@@ -344,15 +318,12 @@ function App() {
             </div>
             <span className={`text-sm font-medium hidden md:block ${
               isStep1Complete ? 'text-green-500' : currentStep === 1 ? 'text-text-secondary' : 'text-text-disabled'
-            }`}>上傳音訊</span>
+            }`}>Upload Audio</span>
           </div>
 
-          {/* 連接線 */}
-          <div className={`h-0.5 w-12 md:w-20 transition-colors duration-200 ${
-            isStep1Complete ? 'bg-green-500' : 'bg-border'
-          }`} />
+          <div className={`h-0.5 w-12 md:w-20 transition-colors duration-200 ${isStep1Complete ? 'bg-green-500' : 'bg-border'}`} />
 
-          {/* 步驟 2 */}
+          {/* Step 2 */}
           <div className="flex items-center gap-3">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
               isStep2Complete
@@ -369,15 +340,12 @@ function App() {
             </div>
             <span className={`text-sm font-medium hidden md:block ${
               isStep2Complete ? 'text-green-500' : currentStep === 2 ? 'text-text-secondary' : 'text-text-disabled'
-            }`}>設定參考</span>
+            }`}>Set Reference</span>
           </div>
 
-          {/* 連接線 */}
-          <div className={`h-0.5 w-12 md:w-20 transition-colors duration-200 ${
-            isStep2Complete ? 'bg-green-500' : 'bg-border'
-          }`} />
+          <div className={`h-0.5 w-12 md:w-20 transition-colors duration-200 ${isStep2Complete ? 'bg-green-500' : 'bg-border'}`} />
 
-          {/* 步驟 3 */}
+          {/* Step 3 */}
           <div className="flex items-center gap-3">
             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
               generatedAudioUrl
@@ -394,7 +362,7 @@ function App() {
             </div>
             <span className={`text-sm font-medium hidden md:block ${
               generatedAudioUrl ? 'text-green-500' : currentStep === 3 ? 'text-text-secondary' : 'text-text-disabled'
-            }`}>生成語音</span>
+            }`}>Generate Voice</span>
           </div>
         </div>
 
@@ -408,14 +376,11 @@ function App() {
                   <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
                     <Music className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-white text-base font-semibold">參考音訊（上傳要複製的聲音樣本）</span>
+                  <span className="text-white text-base font-semibold">Reference Audio (voice to clone)</span>
                 </div>
-                {isStep1Complete && (
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                )}
+                {isStep1Complete && <CheckCircle className="w-5 h-5 text-green-400" />}
               </div>
 
-              {/* 快速測試按鈕 */}
               {!refAudioFile && (
                 <button
                   onClick={handleLoadExample}
@@ -425,25 +390,22 @@ function App() {
                   {loadingExample ? (
                     <>
                       <Loader2 className="w-5 h-5 text-green-400 animate-spin" />
-                      <span className="text-green-400 text-sm font-medium">載入中...</span>
+                      <span className="text-green-400 text-sm font-medium">Loading...</span>
                     </>
                   ) : (
                     <>
                       <Zap className="w-5 h-5 text-green-400 group-hover:scale-110 transition-transform" />
-                      <span className="text-green-400 text-sm font-medium">
-                        快速測試：使用範例音檔（10秒）
-                      </span>
+                      <span className="text-green-400 text-sm font-medium">Quick Test: Use Example Audio (10s)</span>
                     </>
                   )}
                 </button>
               )}
 
-              {/* 提示訊息 */}
               {!refAudioFile && (
                 <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
                   <HelpCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-blue-400 text-sm">
-                    上傳 <strong>3-10 秒</strong>的清晰語音，單一說話者，無背景噪音效果最佳
+                    Upload <strong>3–10 seconds</strong> of clear audio. Single speaker, no background noise works best.
                   </p>
                 </div>
               )}
@@ -455,13 +417,13 @@ function App() {
                 className="flex flex-col items-center justify-center gap-4 bg-background-secondary border-2 border-border-light rounded-lg px-8 py-10 min-h-[220px] w-full cursor-pointer hover:border-brand-primary hover:bg-[#161923] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-primary"
                 role="button"
                 tabIndex={0}
-                aria-label="上傳參考音訊檔案"
+                aria-label="Upload reference audio file"
               >
                 <div className="flex flex-col items-center gap-3">
                   {uploading ? (
                     <>
                       <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
-                      <span className="text-text-secondary text-base font-medium">上傳中...</span>
+                      <span className="text-text-secondary text-base font-medium">Uploading...</span>
                     </>
                   ) : refAudioFile ? (
                     <>
@@ -469,22 +431,21 @@ function App() {
                         <CheckCircle className="w-8 h-8 text-green-500" />
                       </div>
                       <span className="text-text-secondary text-base font-medium">{refAudioFile.name}</span>
-                      <span className="text-text-subtle text-sm">點擊以重新上傳</span>
+                      <span className="text-text-subtle text-sm">Click to re-upload</span>
                     </>
                   ) : (
                     <>
                       <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
                         <Upload className="w-8 h-8 text-brand-primary" />
                       </div>
-                      <span className="text-text-secondary text-lg font-medium">拖放音訊至此處</span>
-                      <span className="text-text-muted text-sm">或點擊選擇檔案</span>
-                      <span className="text-text-subtle text-xs mt-1">支援 WAV、MP3、FLAC 格式</span>
+                      <span className="text-text-secondary text-lg font-medium">Drag & drop audio here</span>
+                      <span className="text-text-muted text-sm">or click to browse files</span>
+                      <span className="text-text-subtle text-xs mt-1">Supports WAV, MP3, FLAC</span>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* 上傳警告訊息 */}
               {uploadWarning && (
                 <div className="flex items-start gap-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
                   <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
@@ -492,14 +453,13 @@ function App() {
                 </div>
               )}
 
-              {/* 參考音訊播放器 */}
               {refAudioUrl && (
                 <div className="flex flex-col gap-3 w-full p-4 bg-background-secondary rounded-lg border border-border transition-all duration-200">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center">
                       <Play className="w-4 h-4 text-brand-primary" />
                     </div>
-                    <span className="text-text-tertiary text-sm font-medium">預覽參考音訊</span>
+                    <span className="text-text-tertiary text-sm font-medium">Preview Reference Audio</span>
                   </div>
                   <audio
                     ref={refAudioRef}
@@ -519,19 +479,16 @@ function App() {
                   <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
                     <FileText className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-white text-base font-semibold">參考文字（參考音訊的逐字稿）</span>
+                  <span className="text-white text-base font-semibold">Reference Text (transcript of the audio)</span>
                 </div>
-                {!xVectorOnly && refText.trim() && (
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                )}
+                {!xVectorOnly && refText.trim() && <CheckCircle className="w-5 h-5 text-green-400" />}
               </div>
 
-              {/* 提示訊息 */}
               {!xVectorOnly && (
                 <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
                   <HelpCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                   <p className="text-blue-400 text-sm">
-                    輸入參考音訊中說的<strong>完整內容</strong>，逐字稿越準確，生成品質越好
+                    Type the <strong>exact words</strong> spoken in the reference audio. More accurate = better quality.
                   </p>
                 </div>
               )}
@@ -545,10 +502,10 @@ function App() {
                   }}
                   onBlur={() => {
                     if (!xVectorOnly && !refText.trim() && refAudioId) {
-                      setRefTextError('需要參考文字才能獲得最佳品質')
+                      setRefTextError('Reference text is needed for best quality')
                     }
                   }}
-                  placeholder="例如：今天天氣真好，我們一起去公園散步吧..."
+                  placeholder="e.g. Hey everyone, welcome back to my channel..."
                   disabled={xVectorOnly}
                   className={`bg-background-secondary border rounded-lg p-4 h-[140px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:ring-2 transition-all duration-200 resize-none disabled:opacity-50 disabled:cursor-not-allowed ${
                     refTextError
@@ -557,10 +514,10 @@ function App() {
                       ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
                       : 'border-border-light focus:border-brand-primary focus:ring-brand-primary/20'
                   }`}
-                  aria-label="參考文字輸入"
+                  aria-label="Reference text input"
                 />
                 <div className="absolute bottom-3 right-3 text-text-subtle text-xs">
-                  {refText.length} 字元
+                  {refText.length} chars
                 </div>
               </div>
 
@@ -573,20 +530,18 @@ function App() {
             </div>
 
             {/* X-Vector Section */}
-            <label
-              className="flex items-center gap-3 bg-background-secondary rounded-lg p-4 w-full cursor-pointer hover:bg-[#1a1e28] transition-all duration-200 group"
-            >
+            <label className="flex items-center gap-3 bg-background-secondary rounded-lg p-4 w-full cursor-pointer hover:bg-[#1a1e28] transition-all duration-200 group">
               <input
                 type="checkbox"
                 checked={xVectorOnly}
                 onChange={(e) => setXVectorOnly(e.target.checked)}
                 className="sr-only"
-                aria-label="僅使用 x-vector 模式"
+                aria-label="Use x-vector only mode"
               />
               <div className={`w-5 h-5 border-2 rounded-sm flex items-center justify-center transition-all duration-200 ${xVectorOnly ? 'border-brand-primary bg-brand-primary' : 'border-text-disabled group-hover:border-brand-primary/50'}`}>
                 {xVectorOnly && <CheckCircle className="w-3.5 h-3.5 text-white" />}
               </div>
-              <span className="text-text-tertiary text-sm">僅使用 x-vector（無需參考文字，但品質較低）</span>
+              <span className="text-text-tertiary text-sm">Use x-vector only (no reference text needed, but lower quality)</span>
             </label>
           </div>
 
@@ -599,18 +554,15 @@ function App() {
                   <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
                     <MessageSquare className="w-4 h-4 text-white" />
                   </div>
-                  <span className="text-white text-base font-semibold">目標文字（要用複製聲音合成的文字）</span>
+                  <span className="text-white text-base font-semibold">Target Text (what the cloned voice will say)</span>
                 </div>
-                {targetText.trim() && (
-                  <CheckCircle className="w-5 h-5 text-green-400" />
-                )}
+                {targetText.trim() && <CheckCircle className="w-5 h-5 text-green-400" />}
               </div>
 
-              {/* 提示訊息 */}
               <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
                 <HelpCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
                 <p className="text-blue-400 text-sm">
-                  輸入您想要複製聲音說的內容，支援中、英、日、韓等多種語言
+                  Enter what you want the cloned voice to say. Supports English, Chinese, Japanese, Korean, and more.
                 </p>
               </div>
 
@@ -626,10 +578,10 @@ function App() {
                   }}
                   onBlur={() => {
                     if (!targetText.trim() && isStep2Complete) {
-                      setTargetTextError('請輸入要生成的文字內容')
+                      setTargetTextError('Please enter the text you want to generate')
                     }
                   }}
-                  placeholder="例如：歡迎來到我的頻道，今天要跟大家分享..."
+                  placeholder="e.g. Welcome to North Eleven Labs, the future of voice cloning..."
                   className={`bg-background-secondary border rounded-lg p-4 h-[180px] w-full text-text-secondary text-base placeholder-text-subtle focus:outline-none focus:ring-2 transition-all duration-200 resize-none ${
                     targetTextError
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
@@ -637,10 +589,10 @@ function App() {
                       ? 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
                       : 'border-border-light focus:border-brand-primary focus:ring-brand-primary/20'
                   }`}
-                  aria-label="目標文字輸入"
+                  aria-label="Target text input"
                 />
                 <div className="absolute bottom-3 right-3 text-text-subtle text-xs">
-                  {targetText.length} 字元
+                  {targetText.length} chars
                 </div>
               </div>
 
@@ -655,18 +607,18 @@ function App() {
             {/* Language Selection */}
             <div className="flex flex-col gap-3 w-full">
               <div className="flex items-center gap-2 px-1 py-1">
-                <span className="text-text-tertiary text-sm font-medium">語言選擇</span>
+                <span className="text-text-tertiary text-sm font-medium">Language</span>
               </div>
               <select
                 value={language}
                 onChange={(e) => setLanguage(e.target.value)}
                 className="bg-background-secondary border border-border-dark rounded-md px-4 py-3 w-full text-text-secondary text-base focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all duration-200 cursor-pointer hover:border-brand-primary/50"
-                aria-label="選擇語言"
+                aria-label="Select language"
               >
-                <option value="Chinese">中文</option>
-                <option value="English">英文</option>
-                <option value="Japanese">日文</option>
-                <option value="Korean">韓文</option>
+                <option value="English">English</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Korean">Korean</option>
               </select>
             </div>
 
@@ -683,17 +635,17 @@ function App() {
                 onClick={handleGenerate}
                 disabled={loading || !canGenerate}
                 className="flex items-center justify-center gap-3 bg-gradient-to-b from-brand-primary to-brand-secondary rounded-lg px-8 py-5 shadow-[0_6px_20px_rgba(99,102,241,0.27)] w-full hover:shadow-[0_8px_28px_rgba(99,102,241,0.4)] hover:transform hover:scale-[1.01] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-[0_6px_20px_rgba(99,102,241,0.27)] focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-tertiary cursor-pointer"
-                aria-label="開始複製並生成語音"
+                aria-label="Generate cloned voice"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-6 h-6 text-white animate-spin" />
-                    <span className="text-white text-lg font-semibold">生成中...</span>
+                    <span className="text-white text-lg font-semibold">Generating...</span>
                   </>
                 ) : (
                   <>
                     <Zap className="w-6 h-6 text-white" />
-                    <span className="text-white text-lg font-semibold">開始生成語音</span>
+                    <span className="text-white text-lg font-semibold">Generate Voice</span>
                   </>
                 )}
               </button>
@@ -705,7 +657,7 @@ function App() {
                 <div className="w-6 h-6 rounded bg-white/10 flex items-center justify-center">
                   <Headphones className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-white text-base font-semibold">生成的音訊</span>
+                <span className="text-white text-base font-semibold">Generated Audio</span>
               </div>
               <div className="flex flex-col gap-4 bg-background-secondary rounded-lg p-6 w-full">
                 {generatedAudioUrl ? (
@@ -719,12 +671,12 @@ function App() {
                     />
                     <a
                       href={generatedAudioUrl}
-                      download={`qwen3tts_${generatedAudioId}.wav`}
+                      download={`northelevenlabs_${generatedAudioId}.wav`}
                       className="flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-secondary rounded-md px-5 py-3 transition-all duration-200 hover:shadow-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-background-secondary"
-                      aria-label="下載生成的音訊檔案"
+                      aria-label="Download generated audio"
                     >
                       <Download className="w-5 h-5 text-white" />
-                      <span className="text-white text-base font-medium">下載音訊</span>
+                      <span className="text-white text-base font-medium">Download Audio</span>
                     </a>
                   </div>
                 ) : (
@@ -732,7 +684,7 @@ function App() {
                     <div className="w-16 h-16 rounded-full bg-text-disabled/10 flex items-center justify-center">
                       <Music className="w-8 h-8 text-text-disabled" />
                     </div>
-                    <span className="text-text-disabled text-sm">尚無生成的音訊</span>
+                    <span className="text-text-disabled text-sm">No audio generated yet</span>
                   </div>
                 )}
               </div>
@@ -744,21 +696,9 @@ function App() {
               statusType === 'success' ? 'bg-green-500/10 border border-green-500/30' :
               'bg-red-500/10 border border-red-500/30'
             }`}>
-              {statusType === 'info' && (
-                <div className="w-5 h-5 flex-shrink-0">
-                  <Info className="w-5 h-5 text-brand-primary" />
-                </div>
-              )}
-              {statusType === 'success' && (
-                <div className="w-5 h-5 flex-shrink-0">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                </div>
-              )}
-              {statusType === 'error' && (
-                <div className="w-5 h-5 flex-shrink-0">
-                  <XCircle className="w-5 h-5 text-red-500" />
-                </div>
-              )}
+              {statusType === 'info' && <Info className="w-5 h-5 text-brand-primary flex-shrink-0" />}
+              {statusType === 'success' && <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />}
+              {statusType === 'error' && <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />}
               <span className={`text-base ${
                 statusType === 'info' ? 'text-brand-light' :
                 statusType === 'success' ? 'text-green-400' :
@@ -777,12 +717,12 @@ function App() {
               <Volume2 className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-white text-lg font-bold">Qwen3-TTS</span>
-              <span className="text-text-subtle text-sm">語音複製工作室</span>
+              <span className="text-white text-lg font-bold">North Eleven Labs</span>
+              <span className="text-text-subtle text-sm">Voice Cloning Studio</span>
             </div>
           </div>
           <span className="text-text-subtle text-sm text-center md:text-right">
-            © 2024 Qwen3-TTS. 由阿里巴巴 Qwen 團隊提供技術支援。
+            © 2025 North Eleven Labs. Powered by Qwen3-TTS.
           </span>
         </div>
       </footer>
